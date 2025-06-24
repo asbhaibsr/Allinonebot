@@ -1,7 +1,7 @@
 python-telegram-bot==21.2
 pymongo==4.7.3
 dnspython==2.6.0 # Required by pymongo for SRV records
-yt-dlp==2024.05.29 # Latest version of youtube-dlp
+yt-dlp==2024.04.09 # Latest version of youtube-dlp
 instaloader==4.12.1 # Instagram downloader
 requests==2.32.3 # For general HTTP requests, potentially for Terabox
 schedule==1.2.1
