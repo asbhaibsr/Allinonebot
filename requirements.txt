@@ -1,4 +1,4 @@
-python-telegram-bot==21.2
+python-telegram-bot==20.8
 pymongo==4.7.3
 dnspython==2.6.0 # Required by pymongo for SRV records
 yt-dlp==2024.04.09 # Latest version of youtube-dlp
