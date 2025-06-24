@@ -26,7 +26,7 @@ from database import (
 )
 from downloaders import download_terabox, download_youtube, download_instagram
 from keyboards import (
-    start_keyboard,
+#    start_keyboard,
     main_menu_keyboard,
     premium_keyboard,
     channel_check_keyboard,
