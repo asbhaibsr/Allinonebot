@@ -24,9 +24,9 @@ from database import (
     add_premium_downloads,
     get_platform_premium_limit,
 )
-from downloaders import download_terabox, download_youtube, download_instagram
+from downloaders import download_terabox # केवल Terabox डाउनलोडर रखें
 from keyboards import (
-#    start_keyboard, # यह पंक्ति टिप्पणी की गई थी, इसे ऐसे ही रहने दें
+#    start_keyboard,
     main_menu_keyboard,
     premium_keyboard,
     channel_check_keyboard,
@@ -89,12 +89,9 @@ async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # मुफ़्त सीमा और अस्थायी फ़ाइल चेतावनी के साथ प्रारंभिक संदेश प्रदर्शित करें
     message_text = (
-        "नमस्ते! मैं आपका ऑल-इन-वन डाउनलोडर बॉट हूँ। आप यहाँ Terabox, YouTube "
-        "(वीडियो/ऑडियो), और Instagram (रील्स/फोटो) से कंटेंट डाउनलोड कर सकते हैं।"
-        "\n\n**महत्वपूर्ण:** मुफ़्त में, आप हर प्लेटफ़ॉर्म से सीमित संख्या में फाइलें डाउनलोड कर सकते हैं:"
+        "नमस्ते! मैं आपका Terabox डाउनलोडर बॉट हूँ। आप यहाँ Terabox से कंटेंट डाउनलोड कर सकते हैं।"
+        "\n\n**महत्वपूर्ण:** मुफ़्त में, आप Terabox से सीमित संख्या में फाइलें डाउनलोड कर सकते हैं:"
         f"\n  📥 **Terabox:** {Config.FREE_LIMITS['terabox']} फाइलें (शेष: {Config.FREE_LIMITS['terabox'] - user_data.get('terabox', {}).get('free_count', 0)})"
-        f"\n  🎧 **YouTube:** {Config.FREE_LIMITS['youtube']} फाइलें (शेष: {Config.FREE_LIMITS['youtube'] - user_data.get('youtube', {}).get('free_count', 0)})"
-        f"\n  📸 **Instagram:** {Config.FREE_LIMITS['instagram']} फाइलें ( शेष: {Config.FREE_LIMITS['instagram'] - user_data.get('instagram', {}).get('free_count', 0)})"
         "\n\nकॉपीराइट से बचने के लिए, डाउनलोड की गई फाइलें 3 मिनट में सर्वर से डिलीट हो जाएंगी। "
         "कृपया इन्हें तुरंत कहीं और फॉरवर्ड कर लें।"
         "\n\nआगे डाउनलोड करने के लिए, आपको हमारा **प्रीमियम वर्जन** लेना होगा।"
@@ -145,8 +142,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     elif data == "help":
         help_text = (
             "❓ **बॉट का उपयोग कैसे करें:**\n"
-            "1.  नीचे दिए गए बटनों में से अपनी पसंद का प्लेटफ़ॉर्म चुनें (Terabox, YouTube, Instagram)।\n"
-            "2.  चुने हुए प्लेटफ़ॉर्म के लिए लिंक भेजें।\n"
+            "1.  नीचे दिए गए बटनों में से '📥 Terabox Video Download' चुनें।\n"
+            "2.  Terabox लिंक भेजें।\n"
             "3.  बॉट आपकी फाइल डाउनलोड करके भेज देगा।\n"
             "4.  याद रखें, मुफ़्त डाउनलोड की सीमा है और फाइलें अस्थायी होती हैं (3 मिनट में डिलीट)।\n"
             "5.  अधिक डाउनलोड के लिए 'Premium Version ✨' बटन पर क्लिक करें।"
@@ -160,30 +157,26 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             "📥 **Terabox Video Download:**\nअब आप Terabox लिंक भेज सकते हैं।",
             reply_markup=main_menu_keyboard() # आसान नेविगेशन के लिए मुख्य मेनू रखें
         )
-    elif data == "youtube_download":
-        user_state[user_id] = "youtube"
-        await query.edit_message_text(
-            "🎧 **YouTube Video/Audio Download:**\nअब आप YouTube लिंक भेज सकते हैं।",
-            reply_markup=main_menu_keyboard()
-        )
-    elif data == "instagram_download":
-        user_state[user_id] = "instagram"
-        await query.edit_message_text(
-            "📸 **Instagram Reels/Photo Download:**\nअब आप Instagram लिंक भेज सकते हैं।",
-            reply_markup=main_menu_keyboard()
-        )
+    # YouTube और Instagram डाउनलोड विकल्प हटा दिए गए हैं
+    # elif data == "youtube_download":
+    #     user_state[user_id] = "youtube"
+    #     await query.edit_message_text(
+    #         "🎧 **YouTube Video/Audio Download:**\nअब आप YouTube लिंक भेज सकते हैं।",
+    #         reply_markup=main_menu_keyboard()
+    #     )
+    # elif data == "instagram_download":
+    #     user_state[user_id] = "instagram"
+    #     await query.edit_message_text(
+    #         "📸 **Instagram Reels/Photo Download:**\nअब आप Instagram लिंक भेज सकते हैं।",
+    #         reply_markup=main_menu_keyboard()
+    #     )
     elif data == "premium_version":
         premium_info = (
             "✨ **हमारे प्रीमियम वर्जन में अपग्रेड करें और असीमित डाउनलोड का आनंद लें!**\n\n"
             "**Terabox Premium:**\n"
             f"  • 50 डाउनलोड: ₹{Config.PREMIUM_PRICES['terabox']['50']}\n"
             f"  • 100 डाउनलोड: ₹{Config.PREMIUM_PRICES['terabox']['100']}\n\n"
-            "**YouTube Premium:**\n"
-            f"  • 100 डाउनलोड: ₹{Config.PREMIUM_PRICES['youtube']['100']}\n"
-            f"  • 200 डाउनलोड: ₹{Config.PREMIUM_PRICES['youtube']['200']}\n\n"
-            "**Instagram Premium:**\n"
-            f"  • 200 डाउनलोड: ₹{Config.PREMIUM_PRICES['instagram']['200']}\n"
-            f"  • 500 डाउनलोड: ₹{Config.PREMIUM_PRICES['instagram']['500']}\n\n"
+            # YouTube और Instagram प्रीमियम की जानकारी हटा दी गई है
             "**प्रीमियम कैसे लें:**\n"
             "नीचे दिए गए QR कोड को स्कैन करें या UPI ID पर भुगतान करें।"
             f"\n\n**UPI ID:** `{Config.UPI_ID}`\n"
@@ -269,11 +262,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     # उपयोगकर्ता की स्थिति के आधार पर डाउनलोड लिंक को हैंडल करें
     platform = user_state.get(user_id)
 
-    if not platform:
+    # अब केवल Terabox ही समर्थित प्लेटफ़ॉर्म है
+    if platform != "terabox":
         await update.message.reply_text(
-            "कृपया पहले नीचे दिए गए बटनों में से एक प्लेटफ़ॉर्म चुनें।",
+            "क्षमा करें, मैं इस समय केवल Terabox लिंक स्वीकार करता हूँ। कृपया '📥 Terabox Video Download' बटन चुनें।",
             reply_markup=main_menu_keyboard()
         )
+        user_state.pop(user_id, None) # Invalid state, clear it
         return
 
     user_data = await get_user_data(user_id)
@@ -297,15 +292,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     try:
         if platform == "terabox":
             file_path = await download_terabox(message_text)
-        elif platform == "youtube":
-            file_path = await download_youtube(message_text)
-        elif platform == "instagram":
-            # Instagram डाउनलोड के लिए लॉगिन की आवश्यकता होती है, जो मुफ़्त बॉट के लिए जटिल है
-            # इंस्टालोडर के लिए कॉन्फ़िग में इंस्टाग्राम लॉगिन विवरण जोड़ने पर विचार करें
-            # या यदि इंस्टालोडर बहुत मुश्किल साबित होता है तो किसी तृतीय-पक्ष API का उपयोग करें
-            file_path = await download_instagram(message_text)
+        # YouTube और Instagram डाउनलोड लॉजिक हटा दिया गया
+        # elif platform == "youtube":
+        #    file_path = await download_youtube(message_text)
+        # elif platform == "instagram":
+        #    file_path = await download_instagram(message_text)
         else:
-            await update.message.reply_text("अवैध प्लेटफ़ॉर्म चयन।")
+            await update.message.reply_text("अवैध प्लेटफ़ॉर्म चयन।") # यह लाइन अब शायद ही कभी पहुंचेगी
             user_state.pop(user_id, None)
             return
 
@@ -443,8 +436,9 @@ async def add_premium_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         limit_type = args[1].lower() # terabox, youtube, instagram
         files_count = int(args[2])
 
-        if limit_type not in Config.FREE_LIMITS: # वैध प्रकारों के लिए FREE_LIMITS कुंजी का उपयोग करें
-            await update.message.reply_text("अमान्य 'limit_type'। मान्य प्रकार हैं: `terabox`, `youtube`, `instagram`।")
+        # केवल 'terabox' को मान्य 'limit_type' के रूप में अनुमति दें
+        if limit_type != "terabox":
+            await update.message.reply_text("अमान्य 'limit_type'। मान्य प्रकार केवल: `terabox`।")
             return
         if files_count <= 0:
             await update.message.reply_text("फाइलों की संख्या धनात्मक होनी चाहिए।")
