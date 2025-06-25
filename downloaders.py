@@ -1,199 +1,181 @@
 import logging
 import os
-import youtube_dl
+import yt_dlp # youtube_dl को yt_dlp से बदला गया
 from instaloader import Instaloader, Post
 import requests
 import re
 import asyncio
+import time # time मॉड्यूल इम्पोर्ट किया गया, जो आपके टेराबॉक्स डमी में उपयोग हो रहा था
 
 logger = logging.getLogger(__name__)
 
-# Directory to save downloaded files temporarily
+# डाउनलोड की गई फ़ाइलों को अस्थायी रूप से सहेजने के लिए निर्देशिका
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 # --- Terabox Downloader ---
 async def download_terabox(url: str) -> str | None:
-    # Terabox downloading is highly dynamic and prone to changes.
-    # heroku-dl (or similar) might require custom adjustments or be replaced
-    # if Terabox changes its internal APIs.
-    # This example uses a placeholder and relies on external tools or libraries
-    # that might need to be run as subprocess or imported if available.
+    # Terabox डाउनलोडिंग अत्यधिक गतिशील और परिवर्तनों के अधीन है।
+    # heroku-dl (या इसी तरह के) को कस्टम समायोजन की आवश्यकता हो सकती है या
+    # यदि Terabox अपने आंतरिक API को बदलता है तो उसे बदला जा सकता है।
+    # यह उदाहरण एक प्लेसहोल्डर का उपयोग करता है और बाहरी टूल या पुस्तकालयों पर निर्भर करता है
+    # जिन्हें सबप्रोसेस के रूप में चलाया जा सकता है या उपलब्ध होने पर इम्पोर्ट किया जा सकता है।
 
-    logger.info(f"Attempting to download Terabox: {url}")
+    logger.info(f"Terabox डाउनलोड करने का प्रयास कर रहा है: {url}")
     try:
-        # For heroku-dl, you'd typically run it as a script or import a function
-        # This is a conceptual example. You might need to shell out or use a direct port.
-        # Example using requests if a direct link can be extracted:
-        # response = requests.get(f"https://some-terabox-api-proxy.com/get_link?url={url}")
-        # data = response.json()
-        # direct_link = data.get("direct_link")
-
-        # As heroku-dl is a separate project, we can't directly import it here without
-        # it being part of the same Python package structure.
-        # For a simple, self-contained bot, you might need to find a way to extract
-        # direct link or shell out to a pre-installed heroku-dl script.
-        # Assuming for now, a conceptual direct link extraction.
-        
-        # A more robust solution might involve:
-        # 1. Running 'python -m heroku_dl <url>' as a subprocess and parsing output.
-        # 2. Finding a pure Python library that does it.
-        # 3. Using a third-party API for Terabox downloads (might not be free).
-
-        # Placeholder: This part requires the actual Terabox direct link extraction logic.
-        # Example using a dummy file for demonstration. Replace with actual download logic.
-        # For real Terabox, consider using a reliable API or robust library.
+        # यहाँ असली Terabox डायरेक्ट लिंक एक्सट्रैक्शन लॉजिक की आवश्यकता है।
+        # प्रदर्शन के लिए एक डमी फ़ाइल का उपयोग किया गया है। वास्तविक डाउनलोड लॉजिक से बदलें।
+        # वास्तविक Terabox के लिए, एक विश्वसनीय API या मजबूत लाइब्रेरी का उपयोग करने पर विचार करें।
         file_name = f"terabox_video_{int(time.time())}.mp4"
         file_path = os.path.join(DOWNLOAD_DIR, file_name)
         
-        # Example: Simulating a download from a dummy URL (replace with actual Terabox logic)
+        # उदाहरण: डमी URL से डाउनलोड का अनुकरण (वास्तविक Terabox लॉजिक से बदलें)
         # response = requests.get(direct_link, stream=True)
         # if response.status_code == 200:
-        #     with open(file_path, 'wb') as f:
-        #         for chunk in response.iter_content(chunk_size=8192):
-        #             f.write(chunk)
-        #     logger.info(f"Terabox video downloaded to {file_path}")
-        #     return file_path
+        #    with open(file_path, 'wb') as f:
+        #        for chunk in response.iter_content(chunk_size=8192):
+        #            f.write(chunk)
+        #    logger.info(f"Terabox वीडियो {file_path} पर डाउनलोड किया गया")
+        #    return file_path
         # else:
-        #     logger.error(f"Failed to download Terabox video from direct link. Status: {response.status_code}")
-        #     return None
+        #    logger.error(f"डायरेक्ट लिंक से Terabox वीडियो डाउनलोड करने में विफल रहा। स्थिति: {response.status_code}")
+        #    return None
         
-        # For the purpose of providing a complete, runnable code,
-        # I'll add a dummy file creation. REPLACE THIS WITH REAL TERABOX DOWNLOAD.
+        # एक पूर्ण, चलाने योग्य कोड प्रदान करने के उद्देश्य से,
+        # मैं एक डमी फ़ाइल निर्माण जोड़ूंगा। इसे वास्तविक TERABOX डाउनलोड से बदलें।
         with open(file_path, 'w') as f:
-            f.write("This is a dummy Terabox video file.")
-        logger.warning(f"Dummy Terabox file created: {file_path}. Replace with actual download logic.")
+            f.write("यह एक डमी Terabox वीडियो फ़ाइल है।")
+        logger.warning(f"डमी Terabox फ़ाइल बनाई गई: {file_path}. वास्तविक डाउनलोड लॉजिक से बदलें।")
         return file_path
 
     except Exception as e:
-        logger.error(f"Error downloading Terabox video {url}: {e}")
+        logger.error(f"Terabox वीडियो {url} डाउनलोड करने में त्रुटि: {e}")
         return None
 
 # --- YouTube Downloader ---
 async def download_youtube(url: str) -> str | None:
-    logger.info(f"Attempting to download YouTube: {url}")
+    logger.info(f"YouTube डाउनलोड करने का प्रयास कर रहा है: {url}")
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', # Prioritize mp4
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', # mp4 को प्राथमिकता दें
         'outtmpl': os.path.join(DOWNLOAD_DIR, '%(title)s.%(ext)s'),
         'noplaylist': True,
-        'concurrent_fragments': 5, # for faster downloads
+        'concurrent_fragments': 5, # तेजी से डाउनलोड के लिए
         'postprocessors': [{
             'key': 'FFmpegVideoRemuxer',
             'preferedformat': 'mp4',
         }, {
-            'key': 'FFmpegExtractAudio', # For audio only if format is audio only
+            'key': 'FFmpegExtractAudio', # केवल ऑडियो के लिए यदि फॉर्मेट केवल ऑडियो है
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
         'logger': logger,
-        'progress_hooks': [lambda d: logger.info(f"YouTube progress: {d['status']}. {d.get('filename', '')}")],
+        'progress_hooks': [lambda d: logger.info(f"YouTube प्रगति: {d['status']}. {d.get('filename', '')}")],
     }
 
     try:
-        # Check if the URL is valid
+        # जांचें कि URL वैध है या नहीं
         if not re.match(r"^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$", url):
-            logger.warning(f"Invalid YouTube URL: {url}")
+            logger.warning(f"अमान्य YouTube URL: {url}")
             return None
 
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        # youtube_dl के बजाय yt_dlp का उपयोग करें
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             if not info_dict:
-                logger.error(f"Could not extract info for YouTube URL: {url}")
+                logger.error(f"YouTube URL: {url} के लिए जानकारी निकालने में विफल रहा।")
                 return None
 
-            # Determine the final filename to download
+            # डाउनलोड करने के लिए अंतिम फ़ाइल नाम निर्धारित करें
             filepath = ydl.prepare_filename(info_dict)
             
-            # Ensure the directory exists
+            # सुनिश्चित करें कि निर्देशिका मौजूद है
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            # Download the file
+            # फ़ाइल डाउनलोड करें
             ydl.download([url])
             
-            # Check if file exists after download. ytdl sometimes renames.
-            # A common issue is the extension might change based on format.
-            # We need to find the actual downloaded file.
+            # जांचें कि डाउनलोड के बाद फ़ाइल मौजूद है या नहीं। ytdl कभी-कभी नाम बदल देता है।
+            # एक सामान्य समस्या यह है कि एक्सटेंशन फॉर्मेट के आधार पर बदल सकता है।
+            # हमें वास्तविक डाउनलोड की गई फ़ाइल ढूंढने की आवश्यकता है।
             if os.path.exists(filepath):
-                logger.info(f"YouTube video downloaded to {filepath}")
+                logger.info(f"YouTube वीडियो {filepath} पर डाउनलोड किया गया")
                 return filepath
             else:
-                # Fallback: Find file by title if direct path doesn't exist
-                # This is a simplification; a more robust solution would track actual downloaded files
+                # फॉलबैक: यदि सीधा पथ मौजूद नहीं है तो शीर्षक से फ़ाइल ढूंढें
+                # यह एक सरलीकरण है; एक अधिक मजबूत समाधान वास्तविक डाउनलोड की गई फ़ाइलों को ट्रैक करेगा
                 potential_files = [f for f in os.listdir(DOWNLOAD_DIR) if info_dict['title'] in f]
                 if potential_files:
                     actual_file_path = os.path.join(DOWNLOAD_DIR, potential_files[0])
-                    logger.info(f"Found YouTube file by title: {actual_file_path}")
+                    logger.info(f"शीर्षक द्वारा YouTube फ़ाइल मिली: {actual_file_path}")
                     return actual_file_path
-                logger.error(f"YouTube file not found after download for {url}.")
+                logger.error(f"YouTube फ़ाइल {url} के लिए डाउनलोड के बाद नहीं मिली।")
                 return None
 
     except Exception as e:
-        logger.error(f"Error downloading YouTube video {url}: {e}")
+        logger.error(f"YouTube वीडियो {url} डाउनलोड करने में त्रुटि: {e}")
         return None
 
 # --- Instagram Downloader ---
 async def download_instagram(url: str) -> str | None:
-    logger.info(f"Attempting to download Instagram: {url}")
+    logger.info(f"Instagram डाउनलोड करने का प्रयास कर रहा है: {url}")
     L = Instaloader(
         dirname_pattern=DOWNLOAD_DIR,
         quiet=True,
         compress_json=False,
-        post_metadata_txt_pattern="" # Do not create metadata files
+        post_metadata_txt_pattern="" # मेटाडेटा फ़ाइलें न बनाएं
     )
 
-    # --- IMPORTANT ---
-    # Instaloader often requires login. If you face issues,
-    # you might need to set up Instaloader login credentials
-    # using L.load_session or L.interactive_login.
-    # This is highly discouraged for public bots due to security.
-    # For a free bot, this is the most challenging part.
-    # Consider using a temporary, dedicated Instagram account for the bot,
-    # or relying on a third-party API if available and within budget.
-    # Example: L.load_session(YOUR_INSTAGRAM_USERNAME, YOUR_SESSION_FILE_PATH)
-    # L.login(YOUR_INSTAGRAM_USERNAME, YOUR_INSTAGRAM_PASSWORD) # Not recommended to hardcode
+    # --- महत्वपूर्ण ---
+    # इंस्टालोडर को अक्सर लॉगिन की आवश्यकता होती है। यदि आपको समस्याएँ आती हैं,
+    # तो आपको L.load_session या L.interactive_login का उपयोग करके इंस्टालोडर लॉगिन क्रेडेंशियल सेट करने की आवश्यकता हो सकती है।
+    # सुरक्षा कारणों से सार्वजनिक बॉट के लिए इसकी अत्यधिक अनुशंसा नहीं की जाती है।
+    # एक मुफ़्त बॉट के लिए, यह सबसे चुनौतीपूर्ण हिस्सा है।
+    # बॉट के लिए एक अस्थायी, समर्पित Instagram खाते का उपयोग करने पर विचार करें,
+    # या यदि उपलब्ध हो और बजट के भीतर हो तो किसी तृतीय-पक्ष API पर निर्भर रहें।
+    # उदाहरण: L.load_session(YOUR_INSTAGRAM_USERNAME, YOUR_SESSION_FILE_PATH)
+    # L.login(YOUR_INSTAGRAM_USERNAME, YOUR_INSTAGRAM_PASSWORD) # हार्डकोड करने की अनुशंसा नहीं की जाती है
 
     try:
-        # Extract shortcode from URL
+        # URL से शॉर्टकोड निकालें
         match = re.search(r'(?:/p/|/reel/|/tv/)([a-zA-Z0-9_-]+)', url)
         if not match:
-            logger.error(f"Invalid Instagram URL: {url}")
+            logger.error(f"अमान्य Instagram URL: {url}")
             return None
         
         shortcode = match.group(1)
         post = Post.from_shortcode(L.context, shortcode)
 
-        # Download the post
-        L.download_post(post, "__dummy__") # __dummy__ for temporary subdir, will be cleaned
+        # पोस्ट डाउनलोड करें
+        L.download_post(post, "__dummy__") # अस्थायी उप-निर्देशिका के लिए __dummy__, साफ़ किया जाएगा
         
-        # Find the downloaded file
-        # Instaloader downloads to a subdir like `downloads/__dummy__/<username>/`
-        # We need to find the actual file (video, image)
+        # डाउनलोड की गई फ़ाइल ढूंढें
+        # Instaloader उप-निर्देशिका जैसे `downloads/__dummy__/<username>/` में डाउनलोड करता है
+        # हमें वास्तविक फ़ाइल (वीडियो, छवि) ढूंढने की आवश्यकता है
         downloaded_files = []
         for root, _, files in os.walk(os.path.join(DOWNLOAD_DIR, "__dummy__")):
             for file in files:
-                if file.endswith(('.mp4', '.jpg', '.jpeg', '.png')): # Filter for relevant media files
+                if file.endswith(('.mp4', '.jpg', '.jpeg', '.png')): # प्रासंगिक मीडिया फ़ाइलों के लिए फ़िल्टर करें
                     downloaded_files.append(os.path.join(root, file))
 
         if downloaded_files:
-            # We are returning the first found media file.
-            # For multi-media posts, you might need to handle multiple files.
+            # हम पहली मिली मीडिया फ़ाइल लौटा रहे हैं।
+            # मल्टी-मीडिया पोस्ट के लिए, आपको कई फ़ाइलों को हैंडल करने की आवश्यकता हो सकती है।
             file_path = downloaded_files[0]
-            logger.info(f"Instagram media downloaded to {file_path}")
+            logger.info(f"Instagram मीडिया {file_path} पर डाउनलोड किया गया")
             
-            # Move the file to the main DOWNLOAD_DIR and clean up the temp directory
+            # फ़ाइल को मुख्य DOWNLOAD_DIR में ले जाएं और अस्थायी निर्देशिका को साफ़ करें
             final_path = os.path.join(DOWNLOAD_DIR, os.path.basename(file_path))
             os.rename(file_path, final_path)
             
-            # Clean up the temporary Instaloader directory
+            # अस्थायी Instaloader निर्देशिका को साफ़ करें
             import shutil
             shutil.rmtree(os.path.join(DOWNLOAD_DIR, "__dummy__"))
             
             return final_path
         else:
-            logger.error(f"No media found for Instagram post {url}")
+            logger.error(f"Instagram पोस्ट {url} के लिए कोई मीडिया नहीं मिला")
             return None
 
     except Exception as e:
-        logger.error(f"Error downloading Instagram media {url}: {e}")
+        logger.error(f"Instagram मीडिया {url} डाउनलोड करने में त्रुटि: {e}")
         return None
-
