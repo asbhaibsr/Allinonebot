@@ -26,44 +26,44 @@ from database import (
 )
 from downloaders import download_terabox, download_youtube, download_instagram
 from keyboards import (
-#    start_keyboard,
+#    start_keyboard, # यह पंक्ति टिप्पणी की गई थी, इसे ऐसे ही रहने दें
     main_menu_keyboard,
     premium_keyboard,
     channel_check_keyboard,
 )
 
-# Configure logging
+# लॉगिंग कॉन्फ़िगर करें
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-# --- Global state to track user's current action ---
-# Helps to know if the bot is expecting a link for a specific platform
-user_state = {} # Stores {'user_id': 'platform_key'} e.g., {123: 'terabox'}
+# --- उपयोगकर्ता की वर्तमान कार्रवाई को ट्रैक करने के लिए वैश्विक स्थिति ---
+# यह जानने में मदद करता है कि बॉट किसी विशिष्ट प्लेटफ़ॉर्म के लिए लिंक की उम्मीद कर रहा है या नहीं
+user_state = {} # {'user_id': 'platform_key'} जैसे: {123: 'terabox'}
 
-# --- Helper function for file deletion ---
+# --- फ़ाइल हटाने के लिए सहायक फ़ंक्शन ---
 async def delete_file_after_delay(file_path, delay_minutes, context: ContextTypes.DEFAULT_TYPE, chat_id, message_id):
     await asyncio.sleep(delay_minutes * 60)
     try:
         os.remove(file_path)
-        logger.info(f"Deleted file: {file_path}")
+        logger.info(f"फ़ाइल हटाई गई: {file_path}")
         await context.bot.send_message(chat_id=chat_id, text=f"⚠️ आपकी पिछली डाउनलोड की गई फ़ाइल (मैसेज ID: {message_id}) सर्वर से डिलीट कर दी गई है।")
     except OSError as e:
-        logger.error(f"Error deleting file {file_path}: {e}")
+        logger.error(f"फ़ाइल {file_path} हटाने में त्रुटि: {e}")
         await context.bot.send_message(chat_id=chat_id, text=f"⚠️ फ़ाइल डिलीट करने में समस्या हुई: {e}")
 
 
-# --- Command Handlers ---
+# --- कमांड हैंडलर्स ---
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     user_name = update.effective_user.full_name
-    logger.info(f"User {user_id} ({user_name}) started the bot.")
+    logger.info(f"उपयोगकर्ता {user_id} ({user_name}) ने बॉट शुरू किया।")
 
-    await update_user_activity(user_id) # Update last_activity for TTL
+    await update_user_activity(user_id) # TTL के लिए अंतिम गतिविधि अपडेट करें
 
-    # Channel Join Check
+    # चैनल जॉइन चेक
     if Config.REQUIRED_CHANNEL_ID:
         try:
             member = await context.bot.get_chat_member(Config.REQUIRED_CHANNEL_ID, user_id)
@@ -75,19 +75,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                     reply_markup=channel_check_keyboard()
                 )
         except Exception as e:
-            logger.error(f"Error checking channel membership for user {user_id}: {e}")
+            logger.error(f"उपयोगकर्ता {user_id} के लिए चैनल सदस्यता की जाँच में त्रुटि: {e}")
             await update.message.reply_text(
                 "चैनल सदस्यता की जाँच करने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें।"
             )
-            await show_main_menu(update, context) # Fallback to main menu if channel check fails
+            await show_main_menu(update, context) # यदि चैनल चेक विफल हो जाता है तो मुख्य मेनू पर वापस जाएँ
     else:
-        await show_main_menu(update, context) # If no channel ID is set, directly show main menu
+        await show_main_menu(update, context) # यदि कोई चैनल ID सेट नहीं है, तो सीधे मुख्य मेनू दिखाएं
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
     user_data = await get_user_data(user_id)
 
-    # Display initial message with free limits and temporary file warning
+    # मुफ़्त सीमा और अस्थायी फ़ाइल चेतावनी के साथ प्रारंभिक संदेश प्रदर्शित करें
     message_text = (
         "नमस्ते! मैं आपका ऑल-इन-वन डाउनलोडर बॉट हूँ। आप यहाँ Terabox, YouTube "
         "(वीडियो/ऑडियो), और Instagram (रील्स/फोटो) से कंटेंट डाउनलोड कर सकते हैं।"
@@ -120,7 +120,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     user_id = query.from_user.id
     data = query.data
 
-    await update_user_activity(user_id) # Update last_activity for TTL
+    await update_user_activity(user_id) # TTL के लिए अंतिम गतिविधि अपडेट करें
 
     if data == "check_channel":
         if Config.REQUIRED_CHANNEL_ID:
@@ -135,12 +135,12 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                         reply_markup=channel_check_keyboard()
                     )
             except Exception as e:
-                logger.error(f"Error re-checking channel membership for user {user_id}: {e}")
+                logger.error(f"उपयोगकर्ता {user_id} के लिए चैनल सदस्यता की पुनः जाँच में त्रुटि: {e}")
                 await query.edit_message_text(
                     "चैनल सदस्यता की जाँच करने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें या बॉट को /start करें।"
                 )
         else:
-            await show_main_menu(update, context) # If no channel ID is set, proceed
+            await show_main_menu(update, context) # यदि कोई चैनल ID सेट नहीं है, तो आगे बढ़ें
 
     elif data == "help":
         help_text = (
@@ -150,7 +150,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             "3.  बॉट आपकी फाइल डाउनलोड करके भेज देगा।\n"
             "4.  याद रखें, मुफ़्त डाउनलोड की सीमा है और फाइलें अस्थायी होती हैं (3 मिनट में डिलीट)।\n"
             "5.  अधिक डाउनलोड के लिए 'Premium Version ✨' बटन पर क्लिक करें।"
-            "\n\nकिसी भी समस्या के लिए, कृपया हमारे सपोर्ट चैनल पर संपर्क करें।" # Optionally add support link here
+            "\n\nकिसी भी समस्या के लिए, कृपया हमारे सपोर्ट चैनल पर संपर्क करें।" # यहाँ वैकल्पिक रूप से सपोर्ट लिंक जोड़ें
         )
         await query.edit_message_text(help_text, reply_markup=main_menu_keyboard(), parse_mode='Markdown')
 
@@ -158,7 +158,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         user_state[user_id] = "terabox"
         await query.edit_message_text(
             "📥 **Terabox Video Download:**\nअब आप Terabox लिंक भेज सकते हैं।",
-            reply_markup=main_menu_keyboard() # Keep main menu for easy navigation
+            reply_markup=main_menu_keyboard() # आसान नेविगेशन के लिए मुख्य मेनू रखें
         )
     elif data == "youtube_download":
         user_state[user_id] = "youtube"
@@ -198,7 +198,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup=premium_keyboard(),
                 parse_mode='Markdown'
             )
-            await query.delete_message() # Delete the old message to avoid clutter
+            await query.delete_message() # अव्यवस्था से बचने के लिए पुराने संदेश को हटा दें
         else:
             await query.edit_message_text(
                 premium_info,
@@ -211,10 +211,10 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text(
             "कृपया अपना UTR (Unique Transaction Reference) नंबर दर्ज करें। "
             "आपकी Telegram ID स्वतः प्राप्त कर ली जाएगी।",
-            reply_markup=main_menu_keyboard() # Allow user to go back to main menu
+            reply_markup=main_menu_keyboard() # उपयोगकर्ता को मुख्य मेनू पर वापस जाने की अनुमति दें
         )
     elif data == "back_to_menu":
-        user_state.pop(user_id, None) # Clear user state
+        user_state.pop(user_id, None) # उपयोगकर्ता की स्थिति साफ़ करें
         await show_main_menu(update, context)
 
 
@@ -223,18 +223,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     message_text = update.message.text
     chat_id = update.effective_chat.id
 
-    await update_user_activity(user_id) # Update last_activity for TTL
+    await update_user_activity(user_id) # TTL के लिए अंतिम गतिविधि अपडेट करें
 
     if user_state.get(user_id) == "awaiting_utr":
         utr_number = message_text.strip()
-        if not utr_number.isdigit() or len(utr_number) < 6: # Basic UTR validation
+        if not utr_number.isdigit() or len(utr_number) < 6: # मूल UTR सत्यापन
             await update.message.reply_text(
                 "अमान्य UTR नंबर। कृपया सही UTR नंबर दर्ज करें।",
                 reply_markup=main_menu_keyboard()
             )
             return
 
-        # Send UTR to admin channel
+        # UTR को एडमिन चैनल पर भेजें
         if Config.ADMIN_CHANNEL_ID:
             try:
                 await context.bot.send_message(
@@ -247,13 +247,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     ),
                     parse_mode='Markdown'
                 )
-                logger.info(f"UTR {utr_number} from user {user_id} sent to admin channel.")
+                logger.info(f"उपयोगकर्ता {user_id} से UTR {utr_number} एडमिन चैनल पर भेजा गया।")
                 await update.message.reply_text(
                     "आपका UTR नंबर प्राप्त हो गया है। हमारी टीम जल्द ही इसकी पुष्टि करेगी और आपका प्रीमियम सक्रिय कर देगी। धन्यवाद!",
                     reply_markup=main_menu_keyboard()
                 )
             except Exception as e:
-                logger.error(f"Error sending UTR to admin channel: {e}")
+                logger.error(f"UTR को एडमिन चैनल पर भेजने में त्रुटि: {e}")
                 await update.message.reply_text(
                     "UTR नंबर भेजने में त्रुटि हुई। कृपया थोड़ी देर बाद पुनः प्रयास करें या एडमिन से संपर्क करें।",
                     reply_markup=main_menu_keyboard()
@@ -263,10 +263,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "UTR नंबर प्राप्त हो गया है, लेकिन एडमिन चैनल कॉन्फ़िगर नहीं है। कृपया एडमिन से संपर्क करें।",
                 reply_markup=main_menu_keyboard()
             )
-        user_state.pop(user_id, None) # Clear state after UTR submission
+        user_state.pop(user_id, None) # UTR सबमिशन के बाद स्थिति साफ़ करें
         return
 
-    # Handle download links based on user state
+    # उपयोगकर्ता की स्थिति के आधार पर डाउनलोड लिंक को हैंडल करें
     platform = user_state.get(user_id)
 
     if not platform:
@@ -280,7 +280,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     free_count = user_data.get(platform, {}).get('free_count', 0)
     premium_count = user_data.get(platform, {}).get('premium_count', 0)
 
-    # Check limits
+    # सीमाएँ जांचें
     if free_count >= Config.FREE_LIMITS.get(platform, 0) and premium_count <= 0:
         await update.message.reply_text(
             f"**आपकी मुफ़्त डाउनलोड सीमा ({Config.FREE_LIMITS.get(platform, 0)} फाइलें) समाप्त हो गई है!** "
@@ -300,9 +300,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         elif platform == "youtube":
             file_path = await download_youtube(message_text)
         elif platform == "instagram":
-            # Instagram download requires login, which is complex for free bots
-            # Consider adding Instagram login details to Config for Instaloader
-            # Or use a third-party API if Instaloader proves too difficult
+            # Instagram डाउनलोड के लिए लॉगिन की आवश्यकता होती है, जो मुफ़्त बॉट के लिए जटिल है
+            # इंस्टालोडर के लिए कॉन्फ़िग में इंस्टाग्राम लॉगिन विवरण जोड़ने पर विचार करें
+            # या यदि इंस्टालोडर बहुत मुश्किल साबित होता है तो किसी तृतीय-पक्ष API का उपयोग करें
             file_path = await download_instagram(message_text)
         else:
             await update.message.reply_text("अवैध प्लेटफ़ॉर्म चयन।")
@@ -317,7 +317,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                 "कृपया इसे तुरंत कहीं और फॉरवर्ड कर लें!"
             )
             sent_message = None
-            if os.path.getsize(file_path) > 50 * 1024 * 1024: # 50 MB limit for sending directly, for larger use document
+            if os.path.getsize(file_path) > 50 * 1024 * 1024: # सीधे भेजने के लिए 50 MB सीमा, बड़े के लिए दस्तावेज़ का उपयोग करें
                 try:
                     sent_message = await update.message.reply_document(
                         document=open(file_path, 'rb'),
@@ -325,7 +325,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         parse_mode='Markdown'
                     )
                 except Exception as e:
-                    logger.warning(f"Failed to send as document, trying as video/photo: {e}")
+                    logger.warning(f"दस्तावेज़ के रूप में भेजने में विफल रहा, वीडियो/फोटो के रूप में प्रयास कर रहा है: {e}")
                     if file_path.endswith(('.mp4', '.mov', '.avi', '.mkv')):
                         sent_message = await update.message.reply_video(
                             video=open(file_path, 'rb'),
@@ -339,8 +339,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                             parse_mode='Markdown'
                         )
                     else:
-                        raise e # If still fails, re-raise
-            else: # For smaller files, try specific types first
+                        raise e # अगर फिर भी विफल रहता है, तो पुनः उत्पन्न करें
+            else: # छोटी फ़ाइलों के लिए, पहले विशिष्ट प्रकारों का प्रयास करें
                 if file_path.endswith(('.mp4', '.mov', '.avi', '.mkv')):
                     sent_message = await update.message.reply_video(
                         video=open(file_path, 'rb'),
@@ -360,19 +360,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                         parse_mode='Markdown'
                     )
                 else:
-                    sent_message = await update.message.reply_document( # Default to document for others
+                    sent_message = await update.message.reply_document( # दूसरों के लिए दस्तावेज़ को डिफ़ॉल्ट करें
                         document=open(file_path, 'rb'),
                         caption=caption,
                         parse_mode='Markdown'
                     )
 
             if sent_message:
-                # Schedule file deletion
+                # फ़ाइल हटाने का शेड्यूल करें
                 context.job_queue.run_once(
                     lambda context: asyncio.create_task(
                         delete_file_after_delay(file_path, Config.FILE_DELETE_DELAY_MINUTES, context, chat_id, sent_message.message_id)
                     ),
-                    Config.FILE_DELETE_DELAY_MINUTES * 60 # Convert minutes to seconds
+                    Config.FILE_DELETE_DELAY_MINUTES * 60 # मिनट को सेकंड में बदलें
                 )
                 await increment_user_downloads(user_id, platform)
                 remaining_free = Config.FREE_LIMITS.get(platform, 0) - free_count - 1
@@ -397,36 +397,36 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     )
 
             else:
-                raise Exception("Could not send file to Telegram.")
+                raise Exception("टेलीग्राम को फ़ाइल नहीं भेज सका।")
 
         else:
             await update.message.reply_text("डाउनलोड विफल रहा या लिंक से कोई फाइल नहीं मिली। कृपया एक वैध लिंक भेजें।")
 
     except Exception as e:
-        logger.error(f"Error handling download for user {user_id}, platform {platform}: {e}")
+        logger.error(f"उपयोगकर्ता {user_id}, प्लेटफ़ॉर्म {platform} के लिए डाउनलोड हैंडल करते समय त्रुटि: {e}")
         await update.message.reply_text(
             f"डाउनलोड करते समय एक त्रुटि हुई: {e}\n"
             "कृपया सुनिश्चित करें कि लिंक सही है या बाद में पुनः प्रयास करें।",
             reply_markup=main_menu_keyboard()
         )
     finally:
-        # If file_path exists and was not successfully sent/deleted by schedule, try to clean up
+        # यदि file_path मौजूद है और शेड्यूल द्वारा सफलतापूर्वक भेजा/हटाया नहीं गया था, तो साफ़ करने का प्रयास करें
         if file_path and os.path.exists(file_path) and 'sent_message' not in locals():
             try:
                 os.remove(file_path)
-                logger.info(f"Cleaned up unsent file: {file_path}")
+                logger.info(f"बिना भेजी गई फ़ाइल साफ़ की गई: {file_path}")
             except OSError as e:
-                logger.error(f"Error cleaning up unsent file {file_path}: {e}")
-        user_state.pop(user_id, None) # Clear user state after attempting download
+                logger.error(f"बिना भेजी गई फ़ाइल {file_path} साफ़ करने में त्रुटि: {e}")
+        user_state.pop(user_id, None) # डाउनलोड का प्रयास करने के बाद उपयोगकर्ता की स्थिति साफ़ करें
 
 
-# --- Admin Command Handler ---
+# --- एडमिन कमांड हैंडलर ---
 async def add_premium_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     admin_id = update.effective_user.id
 
     if str(admin_id) != Config.ADMIN_ID:
         await update.message.reply_text("आपको इस कमांड का उपयोग करने की अनुमति नहीं है।")
-        logger.warning(f"Unauthorized attempt to use /add_premium by user {admin_id}")
+        logger.warning(f"उपयोगकर्ता {admin_id} द्वारा /add_premium का उपयोग करने का अनाधिकृत प्रयास")
         return
 
     args = context.args
@@ -443,7 +443,7 @@ async def add_premium_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         limit_type = args[1].lower() # terabox, youtube, instagram
         files_count = int(args[2])
 
-        if limit_type not in Config.FREE_LIMITS: # Use FREE_LIMITS keys for valid types
+        if limit_type not in Config.FREE_LIMITS: # वैध प्रकारों के लिए FREE_LIMITS कुंजी का उपयोग करें
             await update.message.reply_text("अमान्य 'limit_type'। मान्य प्रकार हैं: `terabox`, `youtube`, `instagram`।")
             return
         if files_count <= 0:
@@ -456,9 +456,9 @@ async def add_premium_command(update: Update, context: ContextTypes.DEFAULT_TYPE
             f"यूज़र `{user_id_to_add_premium}` को `{limit_type}` के लिए `{files_count}` प्रीमियम डाउनलोड सफलतापूर्वक जोड़े गए हैं।",
             parse_mode='Markdown'
         )
-        logger.info(f"Admin {admin_id} added {files_count} premium {limit_type} downloads for user {user_id_to_add_premium}")
+        logger.info(f"एडमिन {admin_id} ने उपयोगकर्ता {user_id_to_add_premium} के लिए {files_count} प्रीमियम {limit_type} डाउनलोड जोड़े")
 
-        # Send notification to the user
+        # उपयोगकर्ता को अधिसूचना भेजें
         try:
             total_premium_for_platform = await get_platform_premium_limit(user_id_to_add_premium, limit_type)
             await context.bot.send_message(
@@ -471,44 +471,45 @@ async def add_premium_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                 parse_mode='Markdown'
             )
         except Exception as e:
-            logger.error(f"Could not send premium activation message to user {user_id_to_add_premium}: {e}")
+            logger.error(f"उपयोगकर्ता {user_id_to_add_premium} को प्रीमियम सक्रियण संदेश नहीं भेज सका: {e}")
 
     except ValueError:
         await update.message.reply_text("कृपया सही संख्यात्मक Telegram ID और फ़ाइलों की संख्या दर्ज करें।")
     except PyMongoError as e:
-        logger.error(f"Database error in add_premium_command: {e}")
+        logger.error(f"add_premium_command में डेटाबेस त्रुटि: {e}")
         await update.message.reply_text(f"डेटाबेस त्रुटि: {e}")
     except Exception as e:
-        logger.error(f"Error in add_premium_command: {e}")
+        logger.error(f"add_premium_command में त्रुटि: {e}")
         await update.message.reply_text(f"कमांड निष्पादित करते समय एक अज्ञात त्रुटि हुई: {e}")
 
 
 def main() -> None:
-    # Get the Telegram Bot Token from Config
+    # कॉन्फ़िग से टेलीग्राम बॉट टोकन प्राप्त करें
     token = Config.TELEGRAM_BOT_TOKEN
     if not token:
-        logger.error("Telegram Bot Token is not set. Please set TELEGRAM_BOT_TOKEN in Koyeb environment variables.")
+        logger.error("टेलीग्राम बॉट टोकन सेट नहीं है। कृपया Koyeb पर्यावरण चर में TELEGRAM_BOT_TOKEN सेट करें।")
         exit(1)
 
-    # Initialize MongoDB connection
-    # The database initialization (including TTL indexes) will happen on first interaction
+    # MongoDB कनेक्शन प्रारंभ करें
+    # डेटाबेस इनिशियलाइज़ेशन (TTL इंडेक्स सहित) पहली बातचीत पर होगा
     try:
         initialize_database()
-        logger.info("MongoDB database connection initialized.")
+        logger.info("MongoDB डेटाबेस कनेक्शन सफलतापूर्वक प्रारंभ किया गया।")
     except Exception as e:
-        logger.critical(f"Failed to initialize MongoDB database: {e}")
-        exit(1) # Exit if database connection fails
+        logger.critical(f"MongoDB डेटाबेस प्रारंभ करने में विफल रहा: {e}")
+        exit(1) # यदि डेटाबेस कनेक्शन विफल रहता है तो बाहर निकलें
 
+    # 'Updater' को हटाकर 'Application' सीधे बिल्ड करें
     application = Application.builder().token(token).build()
 
-    # --- Handlers ---
+    # --- हैंडलर्स ---
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(handle_callback_query))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.add_handler(CommandHandler("add_premium", add_premium_command)) # Admin command
+    application.add_handler(CommandHandler("add_premium", add_premium_command)) # एडमिन कमांड
 
-    # Run the bot
-    logger.info("Bot started polling...")
+    # बॉट चलाएं
+    logger.info("बॉट पोलिंग शुरू हो गया है...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
