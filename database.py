@@ -13,56 +13,56 @@ users_collection = None
 def initialize_database():
     global client, db, users_collection
     if not Config.MONGO_URI:
-        raise ValueError("MONGO_URI is not set in Config. Please set it in Koyeb environment variables.")
+        raise ValueError("MONGO_URI कॉन्फिग में सेट नहीं है। कृपया इसे Koyeb पर्यावरण चर में सेट करें।")
 
     try:
         client = MongoClient(Config.MONGO_URI)
         db = client[Config.MONGO_DB_NAME]
         users_collection = db["users"]
-        logger.info("Successfully connected to MongoDB.")
+        logger.info("MongoDB से सफलतापूर्वक कनेक्ट किया गया।")
 
-        # Create TTL indexes if they don't exist
-        # For free users: delete if no activity for FREE_USER_TTL_SECONDS
+        # TTL इंडेक्स बनाएं यदि वे मौजूद नहीं हैं
+        # मुफ़्त उपयोगकर्ताओं के लिए: यदि FREE_USER_TTL_SECONDS के लिए कोई गतिविधि नहीं है तो हटा दें
         if "last_activity_ttl" not in users_collection.index_information():
             users_collection.create_index(
                 "last_activity",
                 expireAfterSeconds=Config.FREE_USER_TTL_SECONDS,
                 name="last_activity_ttl"
             )
-            logger.info("Created TTL index for last_activity.")
+            logger.info("last_activity के लिए TTL इंडेक्स बनाया गया।")
 
-        # For premium users whose limits are exhausted: delete after PREMIUM_EXHAUSTED_TTL_SECONDS
+        # प्रीमियम उपयोगकर्ताओं के लिए जिनकी सीमा समाप्त हो गई है: PREMIUM_EXHAUSTED_TTL_SECONDS के बाद हटा दें
         if "premium_limit_exhausted_ttl" not in users_collection.index_information():
             users_collection.create_index(
                 "premium_limit_exhausted_at",
                 expireAfterSeconds=Config.PREMIUM_EXHAUSTED_TTL_SECONDS,
                 name="premium_limit_exhausted_ttl"
             )
-            logger.info("Created TTL index for premium_limit_exhausted_at.")
+            logger.info("premium_limit_exhausted_at के लिए TTL इंडेक्स बनाया गया।")
 
     except ConnectionFailure as e:
-        logger.critical(f"MongoDB Connection failed: {e}")
+        logger.critical(f"MongoDB कनेक्शन विफल रहा: {e}")
         raise
     except PyMongoError as e:
-        logger.critical(f"MongoDB error during initialization: {e}")
+        logger.critical(f"आरंभिकरण के दौरान MongoDB त्रुटि: {e}")
         raise
     except Exception as e:
-        logger.critical(f"Unexpected error during DB initialization: {e}")
+        logger.critical(f"DB आरंभिकरण के दौरान अप्रत्याशित त्रुटि: {e}")
         raise
 
 async def get_user_data(user_id: int) -> dict:
     if users_collection is None:
-        initialize_database() # Ensure DB is initialized
+        initialize_database() # सुनिश्चित करें कि DB आरंभ हो चुका है
     
     user_data = users_collection.find_one({"_id": user_id})
     if not user_data:
-        # Create a new user entry if not found
+        # यदि नहीं मिलता है तो एक नई उपयोगकर्ता प्रविष्टि बनाएं
         default_user_data = {
             "_id": user_id,
             "last_activity": datetime.utcnow(),
-            "terabox": {"free_count": 0, "premium_count": 0},
-            "youtube": {"free_count": 0, "premium_count": 0},
-            "instagram": {"free_count": 0, "premium_count": 0},
+            "terabox": {"free_count": 0, "premium_count": 0}, # केवल Terabox रखें
+            # "youtube": {"free_count": 0, "premium_count": 0}, # हटा दिया गया
+            # "instagram": {"free_count": 0, "premium_count": 0}, # हटा दिया गया
             "premium_limit_exhausted_at": None,
         }
         users_collection.insert_one(default_user_data)
@@ -76,60 +76,68 @@ async def update_user_activity(user_id: int):
     users_collection.update_one(
         {"_id": user_id},
         {"$set": {"last_activity": datetime.utcnow()}},
-        upsert=True # Creates the document if it doesn't exist
+        upsert=True # यदि दस्तावेज़ मौजूद नहीं है तो उसे बनाता है
     )
 
 async def increment_user_downloads(user_id: int, platform: str):
     if users_collection is None:
         initialize_database()
     
-    user_data = await get_user_data(user_id) # Get latest data
+    user_data = await get_user_data(user_id) # नवीनतम डेटा प्राप्त करें
     
-    # Check free limits first
+    # पहले मुफ़्त सीमाएँ जांचें
     current_free_count = user_data.get(platform, {}).get("free_count", 0)
     current_premium_count = user_data.get(platform, {}).get("premium_count", 0)
 
     update_fields = {}
 
     if current_free_count < Config.FREE_LIMITS.get(platform, 0):
-        # Use free download
+        # मुफ़्त डाउनलोड का उपयोग करें
         update_fields[f"{platform}.free_count"] = current_free_count + 1
-        logger.info(f"User {user_id} used free {platform} download. New count: {current_free_count + 1}")
+        logger.info(f"उपयोगकर्ता {user_id} ने {platform} मुफ़्त डाउनलोड का उपयोग किया। नई गणना: {current_free_count + 1}")
     elif current_premium_count > 0:
-        # Use premium download
+        # प्रीमियम डाउनलोड का उपयोग करें
         update_fields[f"{platform}.premium_count"] = current_premium_count - 1
-        logger.info(f"User {user_id} used premium {platform} download. Remaining: {current_premium_count - 1}")
+        logger.info(f"उपयोगकर्ता {user_id} ने {platform} प्रीमियम डाउनलोड का उपयोग किया। शेष: {current_premium_count - 1}")
     else:
-        # Should not happen if limit check is done before calling this function
-        logger.warning(f"Increment called for user {user_id} on platform {platform} but no limits left.")
-        return # No change if no limits
+        # यह तब नहीं होना चाहिए जब इस फ़ंक्शन को कॉल करने से पहले सीमा जांच की जाती है
+        logger.warning(f"उपयोगकर्ता {user_id} के लिए प्लेटफ़ॉर्म {platform} पर इंक्रीमेंट को कॉल किया गया लेकिन कोई सीमा नहीं बची।")
+        return # यदि कोई सीमा नहीं है तो कोई बदलाव नहीं
 
-    # Set/Reset premium_limit_exhausted_at if all limits are exhausted after this download
-    # This logic assumes ALL premium limits across ALL platforms must be exhausted
-    # for the user's data to be marked for deletion based on premium_limit_exhausted_at
+    # यदि इस डाउनलोड के बाद सभी सीमाएं समाप्त हो गई हैं तो premium_limit_exhausted_at सेट/रीसेट करें
+    # यह लॉजिक मानता है कि उपयोगकर्ता के डेटा को premium_limit_exhausted_at के आधार पर हटाने के लिए
+    # सभी प्लेटफ़ॉर्मों पर सभी प्रीमियम सीमाएँ समाप्त होनी चाहिए
     updated_user_data = users_collection.find_one_and_update(
         {"_id": user_id},
         {"$set": update_fields},
-        return_document=True # Return the updated document
+        return_document=True # अपडेटेड दस्तावेज़ लौटाएं
     )
     
-    # Check if all free and all premium limits are exhausted for ALL platforms
+    # जांचें कि क्या सभी मुफ़्त और सभी प्रीमियम सीमाएँ सभी प्लेटफ़ॉर्मों के लिए समाप्त हो गई हैं
     all_limits_exhausted = True
-    for p in Config.FREE_LIMITS.keys():
-        p_free_count = updated_user_data.get(p, {}).get("free_count", 0)
-        p_premium_count = updated_user_data.get(p, {}).get("premium_count", 0)
-        if p_free_count < Config.FREE_LIMITS.get(p, 0) or p_premium_count > 0:
-            all_limits_exhausted = False
-            break
+    # अब केवल 'terabox' को लूप में शामिल करें
+    if (updated_user_data.get("terabox", {}).get("free_count", 0) >= Config.FREE_LIMITS.get("terabox", 0) and
+        updated_user_data.get("terabox", {}).get("premium_count", 0) <= 0):
+        pass # Terabox सीमा समाप्त
+    else:
+        all_limits_exhausted = False # Terabox सीमा समाप्त नहीं हुई
+    
+    # पुराने लूप को हटा दिया गया था:
+    # for p in Config.FREE_LIMITS.keys():
+    #     p_free_count = updated_user_data.get(p, {}).get("free_count", 0)
+    #     p_premium_count = updated_user_data.get(p, {}).get("premium_count", 0)
+    #     if p_free_count < Config.FREE_LIMITS.get(p, 0) or p_premium_count > 0:
+    #         all_limits_exhausted = False
+    #         break
 
     if all_limits_exhausted:
         users_collection.update_one(
             {"_id": user_id},
             {"$set": {"premium_limit_exhausted_at": datetime.utcnow()}}
         )
-        logger.info(f"User {user_id} has exhausted all free and premium limits. Marked for deletion.")
+        logger.info(f"उपयोगकर्ता {user_id} ने सभी मुफ़्त और प्रीमियम सीमाएँ समाप्त कर दी हैं। हटाने के लिए चिह्नित किया गया।")
     else:
-        # If they still have premium, ensure exhausted_at is null
+        # यदि उनके पास अभी भी प्रीमियम है, तो सुनिश्चित करें कि exhausted_at शून्य है
         users_collection.update_one(
             {"_id": user_id},
             {"$set": {"premium_limit_exhausted_at": None}}
@@ -143,10 +151,10 @@ async def add_premium_downloads(user_id: int, platform: str, count: int):
     users_collection.update_one(
         {"_id": user_id},
         {"$inc": {f"{platform}.premium_count": count},
-         "$set": {"premium_limit_exhausted_at": None}}, # Reset exhausted status
+         "$set": {"premium_limit_exhausted_at": None}}, # समाप्त स्थिति रीसेट करें
         upsert=True
     )
-    logger.info(f"Added {count} premium downloads for user {user_id} on {platform}.")
+    logger.info(f"उपयोगकर्ता {user_id} के लिए {platform} पर {count} प्रीमियम डाउनलोड जोड़े गए।")
 
 async def get_platform_premium_limit(user_id: int, platform: str) -> int:
     if users_collection is None:
