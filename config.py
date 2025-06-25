@@ -20,18 +20,18 @@ class Config:
     # Get this from @RawDataBot after adding your bot as admin to the channel
     ADMIN_CHANNEL_ID = os.environ.get("ADMIN_CHANNEL_ID") # Optional, set to None if not needed
 
-    # Free Download Limits per platform
+    # Free Download Limits per platform (केवल Terabox के लिए)
     FREE_LIMITS = {
         "terabox": 5,
-        "youtube": 10,
-        "instagram": 20,
+        # "youtube": 10, # हटा दिया गया
+        # "instagram": 20, # हटा दिया गया
     }
 
-    # Premium Prices (for display only)
+    # Premium Prices (for display only) (केवल Terabox के लिए)
     PREMIUM_PRICES = {
         "terabox": {"50": 100, "100": 200},
-        "youtube": {"100": 20, "200": 40},
-        "instagram": {"200": 20, "500": 50},
+        # "youtube": {"100": 20, "200": 40}, # हटा दिया गया
+        # "instagram": {"200": 20, "500": 50}, # हटा दिया गया
     }
 
     # QR Code Image URL for Premium Version (direct link to the image)
